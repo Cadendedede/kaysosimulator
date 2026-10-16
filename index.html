@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>kayso fart sim</title>
 
     <style>
@@ -22,10 +22,13 @@
             inset: 0;
             width: 100%;
             height: 100%;
+            overflow: hidden;
         }
 
         #unity-canvas {
             display: block;
+            position: absolute;
+            inset: 0;
             width: 100%;
             height: 100%;
             border: 0;
@@ -34,6 +37,7 @@
         }
     </style>
 </head>
+
 <body>
     <div id="unity-container">
         <canvas id="unity-canvas" tabindex="-1"></canvas>
@@ -47,53 +51,71 @@
         var loaderUrl = buildUrl + "/web build.loader.js";
 
         var config = {
-            dataUrl: buildUrl + "/web build.data.br",
-            frameworkUrl: buildUrl + "/web build.framework.js.br",
-            codeUrl: buildUrl + "/web build.wasm.br",
+            dataUrl: buildUrl + "/web build.data.gz",
+            frameworkUrl: buildUrl + "/web build.framework.js.gz",
+            codeUrl: buildUrl + "/web build.wasm.gz",
             streamingAssetsUrl: "StreamingAssets",
             companyName: "DefaultCompany",
             productName: "kayso fart sim",
             productVersion: "1.0"
         };
 
-        var script = document.createElement("script");
+        // Allow Unity to match its render resolution to the canvas.
+        // The canvas itself fills the browser viewport.
+        function resizeCanvas() {
+            canvas.style.width = window.innerWidth + "px";
+            canvas.style.height = window.innerHeight + "px";
+        }
 
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
+
+        var unityInstance = null;
+        var fullscreenRequested = false;
+
+        function requestFullscreen() {
+            if (!unityInstance || fullscreenRequested) return;
+
+            fullscreenRequested = true;
+
+            try {
+                unityInstance.SetFullscreen(1);
+            } catch (error) {
+                console.warn("Fullscreen request failed:", error);
+                fullscreenRequested = false;
+            }
+
+            document.removeEventListener("pointerdown", requestFullscreen);
+            document.removeEventListener("keydown", requestFullscreen);
+        }
+
+        var script = document.createElement("script");
         script.src = loaderUrl;
 
         script.onload = function () {
-            createUnityInstance(canvas, config, function (progress) {
-                // No premade loading UI.
-            }).then(function (unityInstance) {
-                canvas.focus();
+            createUnityInstance(canvas, config)
+                .then(function (instance) {
+                    unityInstance = instance;
+                    canvas.focus();
 
-                // Fullscreen is requested only after a user interaction.
-                function requestFullscreen() {
-                    if (!document.fullscreenElement) {
-                        unityInstance.SetFullscreen(1);
-                    }
-
-                    document.removeEventListener(
-                        "pointerdown", requestFullscreen
+                    document.addEventListener(
+                        "pointerdown",
+                        requestFullscreen
                     );
-                    document.removeEventListener(
-                        "keydown", requestFullscreen
-                    );
-                }
 
-                document.addEventListener(
-                    "pointerdown", requestFullscreen
-                );
-                document.addEventListener(
-                    "keydown", requestFullscreen
-                );
-            }).catch(function (message) {
-                console.error("Unity initialization failed:", message);
-                alert(message);
-            });
+                    document.addEventListener(
+                        "keydown",
+                        requestFullscreen
+                    );
+                })
+                .catch(function (message) {
+                    console.error("Unity failed to initialize:", message);
+                    alert("The game failed to load. Check the browser console.");
+                });
         };
 
         script.onerror = function () {
-            console.error("Failed to load Unity loader:", script.src);
+            console.error("Failed to load Unity loader:", loaderUrl);
         };
 
         document.body.appendChild(script);
