@@ -1,0 +1,126 @@
+```html
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>kayso fart sim</title>
+
+    <style>
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #000;
+        }
+
+        #unity-container {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        #unity-canvas {
+            position: absolute;
+            inset: 0;
+            display: block;
+            width: 100%;
+            height: 100%;
+            border: 0;
+            outline: none;
+            background: #000;
+        }
+
+        #unity-canvas:focus {
+            outline: none;
+        }
+
+        #unity-container:fullscreen,
+        #unity-container:-webkit-full-screen {
+            width: 100%;
+            height: 100%;
+            background: #000;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="unity-container">
+        <canvas id="unity-canvas" tabindex="-1"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("unity-canvas");
+        const container = document.getElementById("unity-container");
+
+        const buildUrl = "Build";
+
+        const config = {
+            dataUrl: buildUrl + "/web build.data.br",
+            frameworkUrl: buildUrl + "/web build.framework.js.br",
+            codeUrl: buildUrl + "/web build.wasm.br",
+            streamingAssetsUrl: "StreamingAssets",
+            companyName: "DefaultCompany",
+            productName: "kayso fart sim",
+            productVersion: "1.0"
+        };
+
+        let unityInstance = null;
+
+        function enterFullscreen() {
+            if (!unityInstance) return;
+
+            try {
+                if (!document.fullscreenElement &&
+                    !document.webkitFullscreenElement) {
+                    unityInstance.SetFullscreen(1);
+                }
+            } catch (error) {
+                console.warn("Fullscreen request failed:", error);
+            }
+        }
+
+        // Fullscreen must be requested after a user interaction.
+        document.addEventListener("pointerdown", enterFullscreen);
+        document.addEventListener("keydown", enterFullscreen);
+
+        // Keep the canvas fitted to the browser viewport.
+        function resizeCanvas() {
+            container.style.width = window.innerWidth + "px";
+            container.style.height = window.innerHeight + "px";
+        }
+
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
+
+        const script = document.createElement("script");
+        script.src = buildUrl + "/web build.loader.js";
+
+        script.onload = function () {
+            createUnityInstance(canvas, config)
+                .then(function (instance) {
+                    unityInstance = instance;
+                    canvas.focus();
+                })
+                .catch(function (message) {
+                    console.error("Unity failed to load:", message);
+                    alert("The game failed to load. Check the browser console for details.");
+                });
+        };
+
+        script.onerror = function () {
+            console.error("Could not load Unity loader:", script.src);
+            alert("Could not load the Unity game files. Check the Build folder and filenames.");
+        };
+
+        document.body.appendChild(script);
+    </script>
+</body>
+</html>
+```
